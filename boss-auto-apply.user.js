@@ -2,7 +2,7 @@
 // @name         Boss直聘自动投递助手
 // @namespace    https://github.com/muyuniao/boss-auto-apply
 // @version      0.1.0
-// @description  在 Boss 直聘职位列表页按筛选规则自动发起沟通。需人工启动；不绕过验证码或平台风控。
+// @description  在 Boss 直聘职位列表页按筛选规则自动批量发起沟通。
 // @author       muyuniao
 // @license      MIT
 // @match        https://www.zhipin.com/web/geek/job*
