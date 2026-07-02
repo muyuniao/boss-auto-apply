@@ -1,9 +1,9 @@
 // ==UserScript==
-// @name         Boss直聘自动投递助手（轻量版）
-// @namespace    https://github.com/local/boss-auto-apply
+// @name         Boss直聘自动投递助手
+// @namespace    https://github.com/muyuniao/boss-auto-apply
 // @version      0.1.0
 // @description  在 Boss 直聘职位列表页按筛选规则自动发起沟通。需人工启动；不绕过验证码或平台风控。
-// @author       AutoJob
+// @author       muyuniao
 // @license      MIT
 // @match        https://www.zhipin.com/web/geek/job*
 // @match        https://www.zhipin.com/web/geek/jobs*
@@ -121,7 +121,7 @@
 
   function normalizeConfig(input) {
     const output = { ...DEFAULT_CONFIG, ...(input || {}) };
-    
+
     // 强行锁死固定参数，忽略存储的旧数据
     output.maxApplyCount = DEFAULT_CONFIG.maxApplyCount;
     output.dailyLimit = DEFAULT_CONFIG.dailyLimit;
@@ -470,11 +470,11 @@
         : ` · 平台剩余 ${state.platformRemainingQuota}`;
     const logsHtml = state.logs.length
       ? state.logs
-          .map(
-            (item) =>
-              `<div class="aj-log aj-log-${item.level}">[${htmlEscape(item.time)}] ${htmlEscape(item.message)}</div>`,
-          )
-          .join("")
+        .map(
+          (item) =>
+            `<div class="aj-log aj-log-${item.level}">[${htmlEscape(item.time)}] ${htmlEscape(item.message)}</div>`,
+        )
+        .join("")
       : '<div class="aj-log">暂无日志。点击“开始”按钮进行自动投递。</div>';
 
     cachedPanel.innerHTML = `
@@ -1283,12 +1283,12 @@
     const dialogText = dialogToText(getChatRemindDialog(data));
     return normalizeText(
       dialogText ||
-        data.message ||
-        data.msg ||
-        data?.zpData?.message ||
-        data?.zpData?.bizData?.toast ||
-        data?.zpData?.toast ||
-        "",
+      data.message ||
+      data.msg ||
+      data?.zpData?.message ||
+      data?.zpData?.bizData?.toast ||
+      data?.zpData?.toast ||
+      "",
     );
   }
 
