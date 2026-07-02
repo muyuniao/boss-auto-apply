@@ -1,0 +1,13 @@
+{
+  "name": "boss-auto-apply-userscript",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Lightweight Tampermonkey script for assisted Boss Zhipin job applications.",
+  "scripts": {
+    "check": "node --check boss-auto-apply.user.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "puppeteer-core": "^24.43.1"
+  }
+}
