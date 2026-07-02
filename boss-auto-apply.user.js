@@ -4,6 +4,7 @@
 // @version      0.1.0
 // @description  在 Boss 直聘职位列表页按筛选规则自动发起沟通。需人工启动；不绕过验证码或平台风控。
 // @author       AutoJob
+// @license      MIT
 // @match        https://www.zhipin.com/web/geek/job*
 // @match        https://www.zhipin.com/web/geek/jobs*
 // @match        https://www.zhipin.com/web/geek/job-recommend*
