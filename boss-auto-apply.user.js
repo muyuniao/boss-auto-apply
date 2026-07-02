@@ -2,7 +2,7 @@
 // @name         Boss直聘自动投递助手（轻量版）
 // @namespace    https://github.com/local/boss-auto-apply
 // @version      0.1.0
-// @description  在 Boss 直聘职位列表页按筛选规则自动发起沟通。默认试运行，需人工启动；不绕过验证码或平台风控。
+// @description  在 Boss 直聘职位列表页按筛选规则自动发起沟通。需人工启动；不绕过验证码或平台风控。
 // @author       AutoJob
 // @match        https://www.zhipin.com/web/geek/job*
 // @match        https://www.zhipin.com/web/geek/jobs*
@@ -27,26 +27,19 @@
   const VERSION = "0.1.0";
 
   const DEFAULT_CONFIG = {
-    dryRun: true,
-    autoNextPage: false,
+    autoNextPage: true,
     fetchDetail: true,
     debug: false,
     skipAppliedHistory: true,
     skipHeadhunter: true,
     onlyOnlineBoss: false,
     treatChatRemindAsSuccess: true,
-    maxApplyCount: 10,
-    dailyLimit: 80,
-    delayMinSec: 8,
-    delayMaxSec: 20,
-    pageDelaySec: 5,
-    activeWithinDays: 30,
-    salaryMinK: 0,
-    salaryMaxK: 0,
-    includeJobKeywords: "",
-    excludeJobKeywords: "外包,销售,客服,保险,电话销售,地推",
-    includeCompanyKeywords: "",
-    excludeCompanyKeywords: "外包,培训",
+    maxApplyCount: 9999,
+    dailyLimit: 150,
+    delayMinSec: 4,
+    delayMaxSec: 10,
+    pageDelaySec: 3,
+    activeWithinDays: 14,
     includeDescriptionKeywords: "",
     excludeDescriptionKeywords: "",
   };
@@ -127,33 +120,31 @@
 
   function normalizeConfig(input) {
     const output = { ...DEFAULT_CONFIG, ...(input || {}) };
-    for (const key of [
-      "maxApplyCount",
-      "dailyLimit",
-      "delayMinSec",
-      "delayMaxSec",
-      "pageDelaySec",
-      "activeWithinDays",
-      "salaryMinK",
-      "salaryMaxK",
-    ]) {
-      output[key] = Number(output[key]);
-      if (!Number.isFinite(output[key]) || output[key] < 0)
-        output[key] = DEFAULT_CONFIG[key];
-    }
-    output.maxApplyCount = Math.max(1, Math.floor(output.maxApplyCount));
-    output.dailyLimit = Math.max(1, Math.floor(output.dailyLimit));
-    output.delayMinSec = Math.max(0, output.delayMinSec);
-    output.delayMaxSec = Math.max(output.delayMinSec, output.delayMaxSec);
-    output.pageDelaySec = Math.max(0, output.pageDelaySec);
+    
+    // 强行锁死固定参数，忽略存储的旧数据
+    output.maxApplyCount = DEFAULT_CONFIG.maxApplyCount;
+    output.dailyLimit = DEFAULT_CONFIG.dailyLimit;
+    output.delayMinSec = DEFAULT_CONFIG.delayMinSec;
+    output.delayMaxSec = DEFAULT_CONFIG.delayMaxSec;
+    output.pageDelaySec = DEFAULT_CONFIG.pageDelaySec;
+    output.activeWithinDays = DEFAULT_CONFIG.activeWithinDays;
+
+    // 强制锁定默认开启的配置
+    output.autoNextPage = true;
+    output.fetchDetail = true;
+    output.skipAppliedHistory = true;
+    output.skipHeadhunter = true;
+    output.treatChatRemindAsSuccess = true;
+
     return output;
   }
 
-  function saveConfig(nextConfig) {
+  function saveConfig(nextConfig, silent = false) {
     config = normalizeConfig(nextConfig);
     gmSet(CONFIG_KEY, config);
-    log("success", "配置已保存");
-    renderPanel();
+    if (!silent) {
+      renderPanel();
+    }
   }
 
   function getToday() {
@@ -178,12 +169,6 @@
 
   function saveHistory(history) {
     gmSet(HISTORY_KEY, history);
-  }
-
-  function resetHistory() {
-    saveHistory({ date: getToday(), dailyCount: 0, appliedKeys: [] });
-    log("warn", "今日投递历史已清空");
-    renderPanel();
   }
 
   function recordApplied(job) {
@@ -221,7 +206,6 @@
 
   async function sleepHumanDelay() {
     const seconds = randomBetween(config.delayMinSec, config.delayMaxSec);
-    log("debug", `等待 ${seconds.toFixed(1)} 秒后继续`);
     await sleep(seconds * 1000);
   }
 
@@ -410,7 +394,7 @@
       #${PANEL_ID} .aj-check input { accent-color: #0d9488; }
       #${PANEL_ID} .aj-actions {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(2, 1fr);
         gap: 7px;
         margin: 10px 0;
       }
@@ -426,17 +410,7 @@
       #${PANEL_ID} .aj-btn:hover { filter: brightness(.98); }
       #${PANEL_ID} .aj-btn-primary { background: #14b8a6; color: #fff; }
       #${PANEL_ID} .aj-btn-danger { background: #ef4444; color: #fff; }
-      #${PANEL_ID} .aj-btn-warning { background: #f59e0b; color: #fff; }
       #${PANEL_ID} .aj-btn:disabled { opacity: .55; cursor: not-allowed; }
-      #${PANEL_ID} .aj-note {
-        padding: 8px;
-        border-radius: 10px;
-        background: #fffbeb;
-        color: #92400e;
-        border: 1px solid #fde68a;
-        font-size: 12px;
-        margin: 8px 0;
-      }
       #${PANEL_ID} .aj-logs {
         max-height: 190px;
         overflow: auto;
@@ -500,13 +474,13 @@
               `<div class="aj-log aj-log-${item.level}">[${htmlEscape(item.time)}] ${htmlEscape(item.message)}</div>`,
           )
           .join("")
-      : '<div class="aj-log">暂无日志。建议先保持“试运行”点击开始。</div>';
+      : '<div class="aj-log">暂无日志。点击“开始”按钮进行自动投递。</div>';
 
     cachedPanel.innerHTML = `
       <div class="aj-header">
         <div>
           <div class="aj-title">Boss 自动投递助手</div>
-          <div class="aj-subtitle">v${VERSION} · ${runningText} · 今日 ${history.dailyCount}/${config.dailyLimit}${quotaText}</div>
+          <div class="aj-subtitle">v${VERSION} · ${runningText} · 今日已投 ${history.dailyCount}/150${quotaText}</div>
         </div>
         <button class="aj-icon-btn" data-action="toggle-collapse">${state.collapsed ? "展开" : "收起"}</button>
       </div>
@@ -514,49 +488,22 @@
         <div class="aj-status">
           <div class="aj-stat"><b>${state.scanned}</b><span>扫描</span></div>
           <div class="aj-stat"><b>${state.matched}</b><span>匹配</span></div>
-          <div class="aj-stat"><b>${state.applied}</b><span>${config.dryRun ? "拟投" : "成功"}</span></div>
+          <div class="aj-stat"><b>${state.applied}</b><span>成功</span></div>
           <div class="aj-stat"><b>${state.skipped}</b><span>跳过</span></div>
           <div class="aj-stat"><b>${state.failed}</b><span>失败</span></div>
         </div>
         <div class="aj-current">当前：${htmlEscape(state.current)}</div>
         <form class="aj-form" data-role="config-form">
           <div class="aj-checks">
-            ${checkboxHtml("dryRun", "试运行（不真实投递）")}
-            ${checkboxHtml("autoNextPage", "自动翻页/滚动")}
-            ${checkboxHtml("fetchDetail", "拉取岗位详情过滤")}
-            ${checkboxHtml("skipAppliedHistory", "跳过今日已投")}
-            ${checkboxHtml("skipHeadhunter", "过滤猎头")}
             ${checkboxHtml("onlyOnlineBoss", "仅在线 BOSS")}
-            ${checkboxHtml("treatChatRemindAsSuccess", "开聊提醒算成功")}
             ${checkboxHtml("debug", "调试日志")}
           </div>
-          ${numberFieldHtml("maxApplyCount", "单次上限", 1, 999)}
-          ${numberFieldHtml("dailyLimit", "本地日上限", 1, 999)}
-          ${numberFieldHtml("delayMinSec", "最小间隔秒", 0, 999)}
-          ${numberFieldHtml("delayMaxSec", "最大间隔秒", 0, 999)}
-          ${numberFieldHtml("pageDelaySec", "翻页等待秒", 0, 999)}
-          ${numberFieldHtml("activeWithinDays", "活跃天数内（0关闭）", 0, 365)}
-          ${numberFieldHtml("salaryMinK", "薪资下限K（0关闭）", 0, 999)}
-          ${numberFieldHtml("salaryMaxK", "薪资上限K（0关闭）", 0, 999)}
-          ${textAreaHtml("includeJobKeywords", "职位包含关键词（逗号分隔）")}
-          ${textAreaHtml("excludeJobKeywords", "职位排除关键词（逗号分隔）")}
-          ${textAreaHtml("includeCompanyKeywords", "公司包含关键词（逗号分隔）")}
-          ${textAreaHtml("excludeCompanyKeywords", "公司排除关键词（逗号分隔）")}
           ${textAreaHtml("includeDescriptionKeywords", "岗位详情包含关键词")}
           ${textAreaHtml("excludeDescriptionKeywords", "岗位详情排除关键词")}
         </form>
         <div class="aj-actions">
-          <button class="aj-btn" data-action="save">保存</button>
           <button class="aj-btn aj-btn-primary" data-action="start" ${state.running ? "disabled" : ""}>开始</button>
           <button class="aj-btn aj-btn-danger" data-action="stop" ${state.running ? "" : "disabled"}>停止</button>
-          <button class="aj-btn aj-btn-warning" data-action="clear-log">清日志</button>
-        </div>
-        <div class="aj-actions" style="grid-template-columns: repeat(2, 1fr); margin-top: -4px;">
-          <button class="aj-btn" data-action="reset-history">清今日历史</button>
-          <button class="aj-btn" data-action="inspect">检测岗位数据</button>
-        </div>
-        <div class="aj-note">
-          默认试运行。真实投递前请确认筛选条件、间隔和平台规则；“开聊提醒”通常是 Boss 的二次提醒响应，默认按成功记录；脚本不会处理验证码、登录或风控绕过。
         </div>
         <div class="aj-logs">${logsHtml}</div>
       </div>
@@ -565,15 +512,6 @@
 
   function checkboxHtml(name, label) {
     return `<label class="aj-check"><input type="checkbox" name="${name}" ${config[name] ? "checked" : ""}> ${label}</label>`;
-  }
-
-  function numberFieldHtml(name, label, min, max) {
-    return `
-      <div class="aj-field">
-        <label>${label}</label>
-        <input type="number" name="${name}" min="${min}" max="${max}" step="1" value="${htmlEscape(config[name])}">
-      </div>
-    `;
   }
 
   function textAreaHtml(name, label) {
@@ -613,7 +551,15 @@
     cachedPanel.id = PANEL_ID;
     document.body.appendChild(cachedPanel);
     cachedPanel.addEventListener("click", handlePanelClick);
+    cachedPanel.addEventListener("input", handleFormInput);
+    cachedPanel.addEventListener("change", handleFormInput);
     renderPanel();
+  }
+
+  function handleFormInput(event) {
+    const form = cachedPanel?.querySelector('[data-role="config-form"]');
+    if (!form || !form.contains(event.target)) return;
+    saveConfig(collectFormConfig(), true);
   }
 
   function handlePanelClick(event) {
@@ -628,11 +574,6 @@
     if (action === "toggle-collapse") {
       state.collapsed = !state.collapsed;
       renderPanel();
-      return;
-    }
-
-    if (action === "save") {
-      saveConfig(collectFormConfig());
       return;
     }
 
@@ -652,61 +593,6 @@
       return;
     }
 
-    if (action === "clear-log") {
-      state.logs = [];
-      renderPanel();
-      return;
-    }
-
-    if (action === "reset-history") {
-      if (
-        window.confirm(
-          "确定清空今日已投递历史吗？这会让脚本可能重复投递今天已处理岗位。",
-        )
-      )
-        resetHistory();
-      return;
-    }
-
-    if (action === "inspect") {
-      inspectCurrentJobs();
-    }
-  }
-
-  function inspectCurrentJobs() {
-    const cards = getJobCardElements();
-    const jobs = cards
-      .map((card, index) => buildJobDetail(card, index))
-      .filter(Boolean);
-    console.group(`[${APP_ID}] 当前页岗位数据检测`);
-    console.log("card count:", cards.length);
-    console.table(
-      jobs.map((job) => ({
-        title: job.jobName,
-        company: job.brandName,
-        salary: job.salaryDesc,
-        securityId: Boolean(job.securityId),
-        encryptJobId: Boolean(job.encryptJobId),
-        lid: Boolean(job.lid),
-        contact: job.contact,
-        bossOnline: job.bossOnline,
-      })),
-    );
-    console.groupEnd();
-    log(
-      "success",
-      `检测到 ${cards.length} 张职位卡片，${jobs.filter(canApplyFieldsReady).length} 条具备投递字段；详情见控制台`,
-      jobs.map((job) => ({
-        title: job.jobName,
-        company: job.brandName,
-        salary: job.salaryDesc,
-        hasSecurityId: Boolean(job.securityId),
-        hasEncryptJobId: Boolean(job.encryptJobId),
-        hasLid: Boolean(job.lid),
-        contact: job.contact,
-        bossOnline: job.bossOnline,
-      })),
-    );
   }
 
   function canApplyFieldsReady(job) {
@@ -735,31 +621,21 @@
     }
 
     const token = getCookie("bst");
-    if (!config.dryRun && !token) {
+    if (!token) {
       log("error", "未读取到登录 token。请先在浏览器里自行登录 Boss 直聘。");
       return;
     }
 
     const history = loadHistory();
     if (history.dailyCount >= config.dailyLimit) {
-      log(
-        "warn",
-        `本地今日上限已达到：${history.dailyCount}/${config.dailyLimit}`,
-      );
+      log("warn", "已达每日上限");
       return;
-    }
-
-    if (!config.dryRun) {
-      const ok = window.confirm(
-        `将真实发起 Boss 沟通/投递。\n\n单次上限：${config.maxApplyCount}\n本地今日上限：${config.dailyLimit}\n间隔：${config.delayMinSec}-${config.delayMaxSec} 秒\n\n确认继续？`,
-      );
-      if (!ok) return;
     }
 
     state.running = true;
     state.stopping = false;
     resetRunCounters();
-    log("success", config.dryRun ? "开始试运行：不会真实投递" : "开始真实投递");
+    log("success", "开始自动投递");
 
     try {
       await runApplyLoop();
@@ -769,11 +645,11 @@
       state.current = state.current || "已结束";
       log(
         "success",
-        `任务结束：扫描 ${state.scanned}，匹配 ${state.matched}，${config.dryRun ? "拟投" : "成功"} ${state.applied}，跳过 ${state.skipped}，失败 ${state.failed}`,
+        `任务结束：扫描 ${state.scanned}，匹配 ${state.matched}，成功 ${state.applied}，跳过 ${state.skipped}，失败 ${state.failed}`,
       );
       notify(
         "Boss 自动投递助手",
-        `任务结束：${config.dryRun ? "拟投" : "成功"} ${state.applied} 条`,
+        `任务结束：成功 ${state.applied} 条`,
       );
       renderPanel();
     }
@@ -794,12 +670,8 @@
       state.current = `读取第 ${pageRound} 页职位`;
       renderPanel();
       const jobs = await collectJobsWithWait();
-
       if (jobs.length === 0) {
-        log(
-          "warn",
-          "当前页未找到可读取的职位卡片。可以点击“检测岗位数据”查看是否页面结构已变。",
-        );
+        log("warn", "当前页未找到可读取的职位卡片。");
       }
 
       for (const job of jobs) {
@@ -811,11 +683,8 @@
 
         const history = loadHistory();
         if (history.dailyCount >= config.dailyLimit) {
-          state.current = "达到本地今日上限";
-          log(
-            "warn",
-            `达到本地今日上限：${history.dailyCount}/${config.dailyLimit}`,
-          );
+          state.current = "已达每日上限";
+          log("warn", "已达每日上限");
           return;
         }
 
@@ -926,12 +795,6 @@
       }
 
       state.matched += 1;
-      if (config.dryRun) {
-        state.applied += 1;
-        log("success", `[试运行] 将投递【${formatJob(job)}】`);
-        await sleepHumanDelay();
-        return;
-      }
 
       const result = await applyJob(job);
       if (result.ok) {
@@ -957,7 +820,7 @@
         ) {
           log(
             "warn",
-            `平台沟通机会仅剩 ${result.remainingQuota} 次，建议降低单次上限`,
+            `平台沟通机会仅剩 ${result.remainingQuota} 次`,
           );
         }
       } else if (result.limited) {
@@ -1271,33 +1134,12 @@
       if (!canConfirmOnline) return { ok: false, reason: "无法确认 BOSS 在线" };
     }
 
-    const includeJob = splitKeywords(config.includeJobKeywords);
-    const excludeJob = splitKeywords(config.excludeJobKeywords);
-    if (!textHasInclude(job.jobName, includeJob))
-      return { ok: false, reason: "职位名称不包含指定关键词" };
-    if (excludeJob.length && textHasAny(job.jobName, excludeJob))
-      return { ok: false, reason: "职位名称命中排除关键词" };
-
-    const includeCompany = splitKeywords(config.includeCompanyKeywords);
-    const excludeCompany = splitKeywords(config.excludeCompanyKeywords);
-    if (!textHasInclude(job.brandName, includeCompany))
-      return { ok: false, reason: "公司名称不包含指定关键词" };
-    if (excludeCompany.length && textHasAny(job.brandName, excludeCompany))
-      return { ok: false, reason: "公司名称命中排除关键词" };
-
-    const salaryResult = salaryMatches(
-      job.salaryDesc,
-      config.salaryMinK,
-      config.salaryMaxK,
-    );
-    if (!salaryResult.ok) return { ok: false, reason: salaryResult.reason };
-
     if (config.activeWithinDays > 0 && detail?.activeTimeDesc) {
       const activeDays = parseActiveDays(detail.activeTimeDesc);
       if (Number.isFinite(activeDays) && activeDays > config.activeWithinDays) {
         return {
           ok: false,
-          reason: `BOSS 活跃度不足：${detail.activeTimeDesc}`,
+          reason: "boss活跃度未达标,已过滤",
         };
       }
     }
@@ -1317,48 +1159,6 @@
     }
 
     return { ok: true, reason: "" };
-  }
-
-  function salaryMatches(salaryText, minK, maxK) {
-    minK = Number(minK) || 0;
-    maxK = Number(maxK) || 0;
-    if (minK <= 0 && maxK <= 0) return { ok: true };
-
-    const parsed = parseSalaryK(salaryText);
-    if (!parsed)
-      return { ok: false, reason: `无法解析薪资：${salaryText || "空"}` };
-
-    if (minK > 0 && parsed.max < minK)
-      return { ok: false, reason: `薪资低于下限：${salaryText}` };
-    if (maxK > 0 && parsed.min > maxK)
-      return { ok: false, reason: `薪资高于上限：${salaryText}` };
-    return { ok: true };
-  }
-
-  function parseSalaryK(value) {
-    const text = String(value || "").replace(/\s+/g, "");
-    if (!text) return null;
-    if (/面议/.test(text)) return null;
-
-    let match = text.match(
-      /(\d+(?:\.\d+)?)\s*[-~至]\s*(\d+(?:\.\d+)?)\s*[kK千]/,
-    );
-    if (match) {
-      return { min: Number(match[1]), max: Number(match[2]) };
-    }
-
-    match = text.match(/(\d+(?:\.\d+)?)\s*[kK千]/);
-    if (match) {
-      const valueK = Number(match[1]);
-      return { min: valueK, max: valueK };
-    }
-
-    match = text.match(/(\d+(?:\.\d+)?)\s*[-~至]\s*(\d+(?:\.\d+)?)\s*万/);
-    if (match) {
-      return { min: Number(match[1]) * 10, max: Number(match[2]) * 10 };
-    }
-
-    return null;
   }
 
   function parseActiveDays(value) {
@@ -1630,7 +1430,6 @@
         renderPanel();
       });
       GM_registerMenuCommand("停止 Boss 自动投递", stopApply);
-      GM_registerMenuCommand("清空今日投递历史", resetHistory);
     } catch (error) {
       console.warn(`[${APP_ID}] register menu failed`, error);
     }
@@ -1664,7 +1463,7 @@
     mountPanel();
     registerMenuCommands();
     installRouteWatcher();
-    log("success", "脚本已加载。建议先用“试运行”验证筛选结果。");
+    log("success", "脚本已加载。");
   }
 
   if (document.readyState === "loading") {
