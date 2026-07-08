@@ -10,7 +10,7 @@
 ## 安装与使用
 
 1. 在浏览器中安装 **Tampermonkey / 篡改猴** 插件。
-2. 打开 Tampermonkey 管理面板，新建脚本，将 `boss-auto-apply.user.js` 的全部代码复制进去并保存。
+2. (推荐方式) 访问 [Greasy Fork 脚本安装页面](https://greasyfork.org/zh-CN/scripts/585275-boss%E7%9B%B4%E8%81%98%E8%87%AA%E5%8A%A8%E6%8A%95%E9%80%92%E5%8A%A9%E6%89%8B) 一键安装/更新。也可以选择复制本仓库的 `boss-auto-apply.user.js` 全部代码并在 Tampermonkey 中手动新建保存。
 3. 自行登录 Boss 直聘网页版。
 4. 打开 Boss 直聘职位页面，例如：
    - `https://www.zhipin.com/web/geek/job` （搜索结果页）
