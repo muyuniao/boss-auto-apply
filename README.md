@@ -46,3 +46,11 @@ npm run check
 ```
 
 该命令仅用于做 JavaScript 代码的 AST 语法检查，确保无语法错误。
+
+---
+
+## 📸 运行效果截图
+
+| 页面整体效果 | 操作控制面板 |
+| :---: | :---: |
+| ![页面整体效果](https://github.com/muyuniao/boss-auto-apply/raw/main/images/screenshot1.png) | ![操作控制面板](https://github.com/muyuniao/boss-auto-apply/raw/main/images/screenshot2.png) |

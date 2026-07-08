@@ -32,3 +32,11 @@
 *   本脚本使用的是您当前浏览器登录的 Boss 页面原生接口进行投递，**绝不**收集或上传您的任何个人隐私、账户与密码。
 *   脚本无法且不会尝试绕过 Boss 官方的滑块验证码或账号异常验证。如果弹出验证码，请手动完成即可。
 *   如果提示“今日沟通上限”或触发风控，脚本会自动安全结束。
+
+---
+
+### 📸 运行效果截图
+
+| 页面整体效果 | 操作控制面板 |
+| :---: | :---: |
+| ![页面整体效果](https://github.com/muyuniao/boss-auto-apply/raw/main/images/screenshot1.png) | ![操作控制面板](https://github.com/muyuniao/boss-auto-apply/raw/main/images/screenshot2.png) |
