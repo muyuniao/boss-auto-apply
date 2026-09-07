@@ -47,6 +47,10 @@ npm run check
 
 该命令仅用于做 JavaScript 代码的 AST 语法检查，确保无语法错误。
 
+## 开源协议
+
+本项目基于 [MIT License](LICENSE) 协议开源，欢迎自由使用、修改和分发。
+
 ---
 
 ## 📸 运行效果截图

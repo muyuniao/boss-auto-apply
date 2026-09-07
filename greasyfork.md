@@ -35,6 +35,12 @@
 
 ---
 
+### 📄 开源协议
+
+本项目采用 [MIT License](https://github.com/muyuniao/boss-auto-apply/blob/main/LICENSE) 开源协议。
+
+---
+
 ### 📸 运行效果截图
 
 | 页面整体效果 | 操作控制面板 |
